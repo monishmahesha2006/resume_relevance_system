@@ -1,0 +1,43 @@
+# Core PDF Processing
+PyMuPDF
+pdfplumber
+python-docx
+docx2txt
+
+# NLP and Text Processing
+spacy
+nltk
+scikit-learn
+fuzzywuzzy
+python-Levenshtein
+
+# Machine Learning and Embeddings
+sentence-transformers
+transformers
+torch
+numpy
+
+# Vector Database
+faiss-cpu
+chromadb
+
+# Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Frontend
+streamlit
+plotly
+pandas
+
+# HTTP Requests
+requests
+
+# Optional: OpenAI for LLM feedback
+openai
+
+# Development and Testing
+pytest
+black
+flake8
