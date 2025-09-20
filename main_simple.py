@@ -12,9 +12,9 @@ from datetime import datetime
 # Add backend to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
 
-from utils.pdf_extractor import PDFExtractor
-from utils.text_preprocessor_simple import SimpleTextPreprocessor
-from utils.database_manager import DatabaseManager
+from backend.utils.pdf_extractor import PDFExtractor
+from backend.utils.text_preprocessor_simple import SimpleTextPreprocessor
+from backend.utils.database_manager import DatabaseManager
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -182,7 +182,7 @@ class SimpleResumeRelevancePipeline:
         feedback = ". ".join(feedback_parts) + "." if feedback_parts else "No specific feedback available."
         
         return {
-            'relevance_score': round(final_score * 100, 1),
+            'relevance_score': round(final_score, 3),  # Store as decimal 0-1 for database
             'verdict': verdict,
             'hard_match_score': round(skill_score, 3),
             'soft_match_score': round(keyword_score, 3),
@@ -227,7 +227,7 @@ class SimpleResumeRelevancePipeline:
                     results.append({
                         'resume_name': resume['file_name'],
                         'jd_name': jd['file_name'],
-                        'relevance_score': analysis_result['relevance_score'],
+                        'relevance_score': round(analysis_result['relevance_score'] * 100, 1),  # Convert to percentage for display
                         'verdict': analysis_result['verdict'],
                         'result_id': result_id
                     })

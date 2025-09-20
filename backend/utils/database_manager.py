@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class DatabaseManager:
     """Manage SQLite database operations"""
     
-    def __init__(self, db_path: str = "resume_relevance_system/database/resume_matching.db"):
+    def __init__(self, db_path: str = "resume_matching.db"):
         self.db_path = db_path
         self._ensure_database_exists()
         self._initialize_database()
@@ -25,7 +25,7 @@ class DatabaseManager:
     def _ensure_database_exists(self):
         """Ensure database directory exists"""
         db_dir = os.path.dirname(self.db_path)
-        if not os.path.exists(db_dir):
+        if db_dir and not os.path.exists(db_dir):
             os.makedirs(db_dir, exist_ok=True)
     
     def _initialize_database(self):
@@ -64,7 +64,7 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO job_descriptions (file_name, file_path, raw_text, processed_data)
+                INSERT OR REPLACE INTO job_descriptions (file_name, file_path, raw_text, processed_data)
                 VALUES (?, ?, ?, ?)
             """, (file_name, file_path, raw_text, json.dumps(processed_data)))
             conn.commit()
@@ -75,7 +75,7 @@ class DatabaseManager:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO resumes (file_name, file_path, raw_text, processed_data)
+                INSERT OR REPLACE INTO resumes (file_name, file_path, raw_text, processed_data)
                 VALUES (?, ?, ?, ?)
             """, (file_name, file_path, raw_text, json.dumps(processed_data)))
             conn.commit()
