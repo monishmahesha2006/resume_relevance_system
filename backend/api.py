@@ -15,9 +15,7 @@ from datetime import datetime
 
 # Import our modules
 from utils.pdf_extractor import PDFExtractor
-from utils.text_preprocessor import TextPreprocessor
-from models.feature_engineering import FeatureEngineer
-from models.relevance_scorer import RelevanceScorer
+from utils.text_preprocessor_simple import SimpleTextPreprocessor
 from utils.database_manager import DatabaseManager
 
 logging.basicConfig(level=logging.INFO)
@@ -41,10 +39,119 @@ app.add_middleware(
 
 # Initialize components
 pdf_extractor = PDFExtractor()
-text_preprocessor = TextPreprocessor()
-feature_engineer = FeatureEngineer()
-relevance_scorer = RelevanceScorer()
+text_preprocessor = SimpleTextPreprocessor()
 db_manager = DatabaseManager()
+
+def simple_matching(resume_data, jd_data):
+    """Simple matching algorithm based on skills and keywords"""
+    # Extract skills from both
+    resume_skills = set(resume_data.get('skills', []))
+    jd_skills = set(jd_data.get('skills', []))
+    
+    # Calculate skill overlap
+    if not jd_skills:
+        skill_score = 0.0
+    else:
+        skill_overlap = len(resume_skills.intersection(jd_skills))
+        skill_score = skill_overlap / len(jd_skills)
+    
+    # Calculate education match
+    resume_education = set(resume_data.get('education', []))
+    jd_education = set(jd_data.get('education', []))
+    
+    if not jd_education:
+        education_score = 0.0
+    else:
+        education_overlap = len(resume_education.intersection(jd_education))
+        education_score = education_overlap / len(jd_education)
+    
+    # Calculate experience match
+    resume_years = resume_data.get('experience_years', 0) or 0
+    jd_years = jd_data.get('experience_years', 0) or 0
+    
+    if jd_years == 0:
+        experience_score = 0.5  # Neutral if no requirement specified
+    elif resume_years >= jd_years:
+        experience_score = 1.0
+    else:
+        experience_score = resume_years / jd_years
+    
+    # Calculate keyword overlap in text
+    resume_text = resume_data.get('cleaned_text', '').lower()
+    jd_text = jd_data.get('cleaned_text', '').lower()
+    
+    # Simple keyword matching
+    resume_words = set(resume_text.split())
+    jd_words = set(jd_text.split())
+    
+    if not jd_words:
+        keyword_score = 0.0
+    else:
+        keyword_overlap = len(resume_words.intersection(jd_words))
+        keyword_score = keyword_overlap / len(jd_words)
+    
+    # Weighted final score
+    final_score = (
+        0.4 * skill_score +
+        0.2 * education_score +
+        0.2 * experience_score +
+        0.2 * keyword_score
+    )
+    
+    # Determine verdict
+    if final_score >= 0.7:
+        verdict = 'High'
+    elif final_score >= 0.4:
+        verdict = 'Medium'
+    else:
+        verdict = 'Low'
+    
+    # Calculate missing skills
+    missing_skills = list(jd_skills - resume_skills)
+    
+    # Calculate missing education
+    missing_education = list(jd_education - resume_education)
+    
+    # Experience analysis
+    if jd_years > 0:
+        if resume_years >= jd_years:
+            exp_message = f"Meets experience requirement ({resume_years} years)"
+        else:
+            gap = jd_years - resume_years
+            exp_message = f"Missing {gap} years of experience"
+    else:
+        exp_message = "No specific experience requirement"
+    
+    # Generate simple feedback
+    feedback_parts = []
+    
+    if missing_skills:
+        feedback_parts.append(f"Consider adding these skills: {', '.join(missing_skills[:3])}")
+    
+    if missing_education:
+        feedback_parts.append(f"Consider highlighting relevant education: {', '.join(missing_education)}")
+    
+    if not missing_skills and not missing_education:
+        feedback_parts.append("Good match! Skills and education align well with requirements.")
+    
+    feedback = ". ".join(feedback_parts) + "." if feedback_parts else "No specific feedback available."
+    
+    return {
+        'relevance_score': round(final_score, 3),  # Store as decimal 0-1 for database
+        'verdict': verdict,
+        'hard_match_score': round(skill_score, 3),
+        'soft_match_score': round(keyword_score, 3),
+        'missing_skills': missing_skills,
+        'missing_education': missing_education,
+        'experience_analysis': {
+            'gap': max(0, jd_years - resume_years),
+            'meets_requirement': resume_years >= jd_years,
+            'message': exp_message
+        },
+        'feedback': feedback,
+        'strengths': [f"Strong technical skills: {', '.join(list(resume_skills)[:3])}"] if resume_skills else [],
+        'improvement_areas': [f"Develop missing skills: {', '.join(missing_skills[:3])}"] if missing_skills else []
+    }
 
 # Create upload directories
 UPLOAD_DIR = "uploads"
@@ -163,13 +270,8 @@ async def match_resume_jd(resume_id: int, jd_id: int):
         resume_processed = json.loads(resume_data['processed_data'])
         jd_processed = json.loads(jd_data['processed_data'])
         
-        # Calculate feature scores
-        feature_scores = feature_engineer.calculate_final_score(resume_processed, jd_processed)
-        
-        # Generate comprehensive analysis
-        analysis_result = relevance_scorer.generate_comprehensive_analysis(
-            resume_processed, jd_processed, feature_scores
-        )
+        # Calculate matching scores using simple algorithm
+        analysis_result = simple_matching(resume_processed, jd_processed)
         
         # Save result to database
         result_id = db_manager.save_matching_result(resume_id, jd_id, analysis_result)
@@ -212,13 +314,8 @@ async def match_all_resumes_jds():
                     resume_processed = json.loads(resume['processed_data'])
                     jd_processed = json.loads(jd['processed_data'])
                     
-                    # Calculate feature scores
-                    feature_scores = feature_engineer.calculate_final_score(resume_processed, jd_processed)
-                    
-                    # Generate comprehensive analysis
-                    analysis_result = relevance_scorer.generate_comprehensive_analysis(
-                        resume_processed, jd_processed, feature_scores
-                    )
+                    # Calculate matching scores using simple algorithm
+                    analysis_result = simple_matching(resume_processed, jd_processed)
                     
                     # Save result to database
                     result_id = db_manager.save_matching_result(resume['id'], jd['id'], analysis_result)

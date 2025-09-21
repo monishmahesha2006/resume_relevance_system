@@ -1,0 +1,52 @@
+{
+  "timestamp": "2025-09-20T21:05:36.565153",
+  "summary": {
+    "total_matches": 20,
+    "high_matches": 0,
+    "medium_matches": 0,
+    "low_matches": 20,
+    "average_score": 23.53
+  },
+  "top_matches": [
+    {
+      "resume_name": "Resume - 10.pdf",
+      "jd_name": "sample_jd_1.pdf",
+      "relevance_score": 31.9,
+      "verdict": "Low",
+      "result_id": 43
+    },
+    {
+      "resume_name": "Resume - 7.pdf",
+      "jd_name": "sample_jd_1.pdf",
+      "relevance_score": 30.4,
+      "verdict": "Low",
+      "result_id": 55
+    },
+    {
+      "resume_name": "Resume - 8.pdf",
+      "jd_name": "sample_jd_1.pdf",
+      "relevance_score": 30.3,
+      "verdict": "Low",
+      "result_id": 57
+    },
+    {
+      "resume_name": "Resume - 9.pdf",
+      "jd_name": "sample_jd_1.pdf",
+      "relevance_score": 27.8,
+      "verdict": "Low",
+      "result_id": 59
+    },
+    {
+      "resume_name": "RESUME - 2.pdf",
+      "jd_name": "sample_jd_1.pdf",
+      "relevance_score": 26.6,
+      "verdict": "Low",
+      "result_id": 45
+    }
+  ],
+  "verdict_distribution": {
+    "High": 0,
+    "Medium": 0,
+    "Low": 20
+  }
+}
